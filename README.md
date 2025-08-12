@@ -47,7 +47,7 @@ HÌNH ẢNH MINH HỌA
 
 giao diện nhập thông tin trạm thời tiết
 <img width="997" height="581" alt="image" src="https://github.com/user-attachments/assets/4a38cad6-fbbf-467e-80c3-8d049282e33d" />
-<img width="1565" height="897" alt="image" src="https://github.com/user-attachments/assets/b9b7eb26-d47a-4f76-870e-b7d3829dbf59" />
+
 
 giao diện xem thông tin theo mã trạm
 <img width="1174" height="697" alt="image" src="https://github.com/user-attachments/assets/6cd8e743-7ee3-4a54-a0f5-5433d767d63c" />
