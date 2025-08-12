@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Weather IoT — Danh sách trạm</title>
+  <style>
+    :root{
+      --bg:#071427; --card:#071827; --accent:#7c3aed; --muted:#9fb6bf;
+    }
+    *{box-sizing:border-box;font-family:Inter,system-ui,Segoe UI,Roboto,Arial}
+    body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,#02111a,#061827);color:#e6f3f5;padding:28px}
+    .wrap{width:100%;max-width:960px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));padding:22px;border-radius:12px;border:1px solid rgba(255,255,255,0.03);box-shadow:0 8px 26px rgba(2,8,20,0.6)}
+    h1{margin:0 0 6px;font-size:20px}
+    p{margin:0 0 16px;color:var(--muted)}
+    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px;margin-top:18px}
+    .card{padding:14px;border-radius:10px;background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.02));border:1px solid rgba(255,255,255,0.02)}
+    .card h2{margin:0;font-size:16px;color:#fff}
+    .kv{color:var(--muted);font-size:13px;margin-top:6px}
+    .val{font-size:15px;font-weight:600;margin-top:2px}
+    .empty{color:var(--muted);padding:22px;border-radius:8px;background:rgba(255,255,255,0.01);text-align:center}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Danh sách tất cả trạm thời tiết</h1>
+    <p>Dữ liệu lấy trực tiếp từ Firebase Realtime Database.</p>
+
+    <div id="stationList" class="grid"></div>
+    <div id="info" class="empty">Đang tải dữ liệu...</div>
+  </div>
+
+  <script type="module">
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_PROJECT.firebaseapp.com",
+      databaseURL: "https://bai-2-a52bf-default-rtdb.firebaseio.com/",
+      projectId: "YOUR_PROJECT",
+      storageBucket: "YOUR_PROJECT.appspot.com",
+      messagingSenderId: "SENDER_ID",
+      appId: "APP_ID"
+    };
+
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+    import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    const listContainer = document.getElementById('stationList');
+    const info = document.getElementById('info');
+
+    async function loadStations(){
+      try {
+        const snapshot = await get(ref(db, 'stations'));
+        if (!snapshot.exists()){
+          info.textContent = "❌ Không có dữ liệu trạm nào.";
+          return;
+        }
+        const stations = snapshot.val();
+        listContainer.innerHTML = '';
+        info.style.display = 'none';
+
+        // Nếu là dict
+        if (typeof stations === 'object' && !Array.isArray(stations)) {
+          for (const [id, data] of Object.entries(stations)){
+            listContainer.appendChild(makeCard(id, data));
+          }
+        }
+        // Nếu là list
+        else if (Array.isArray(stations)){
+          stations.forEach((data, idx) => {
+            if (data) listContainer.appendChild(makeCard(idx, data));
+          });
+        }
+      } catch (err) {
+        console.error(err);
+        info.textContent = "⚠️ Lỗi khi lấy dữ liệu.";
+      }
+    }
+
+    function makeCard(id, d){
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.innerHTML = `
+        <h2>Trạm ${id}</h2>
+        <div class="kv">Tên trạm</div>
+        <div class="val">${d.Name || '—'}</div>
+        <div class="kv">Thời gian</div>
+        <div class="val">${d.Time ? new Date(d.Time).toLocaleString() : '—'}</div>
+        <div class="kv">Nhiệt độ</div>
+        <div class="val">${d.Temperature ?? '—'} °C</div>
+        <div class="kv">Độ ẩm</div>
+        <div class="val">${d.Humidity ?? '—'} %</div>
+      `;
+      return card;
+    }
+
+    loadStations();
+  </script>
+</body>
+</html>

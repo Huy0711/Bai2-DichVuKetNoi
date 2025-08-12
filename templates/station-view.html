@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Weather IoT — View Station</title>
+  <style>
+    :root{
+      --bg:#071427; --card:#071827; --accent:#7c3aed; --muted:#9fb6bf;
+    }
+    *{box-sizing:border-box;font-family:Inter,system-ui,Segoe UI,Roboto,Arial}
+    body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,#02111a,#061827);color:#e6f3f5;padding:28px}
+    .wrap{width:100%;max-width:860px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));padding:22px;border-radius:12px;border:1px solid rgba(255,255,255,0.03);box-shadow:0 8px 26px rgba(2,8,20,0.6)}
+    h1{margin:0 0 6px;font-size:20px}
+    p{margin:0 0 16px;color:var(--muted)}
+    .searchRow{display:flex;gap:10px;margin-bottom:18px}
+    input[type="text"]{flex:1;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.03);background:transparent;color:inherit}
+    button{background:linear-gradient(90deg,var(--accent), #06b6d4);color:#02111a;padding:10px 14px;border-radius:10px;border:none;cursor:pointer;font-weight:600}
+    .panel{display:flex;gap:12px;flex-wrap:wrap}
+    .card{flex:1;min-width:240px;padding:14px;border-radius:10px;background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.02));border:1px solid rgba(255,255,255,0.02)}
+    .kv{color:var(--muted);font-size:13px}
+    .val{font-size:18px;font-weight:700;margin-top:6px}
+    .empty{color:var(--muted);padding:22px;border-radius:8px;background:rgba(255,255,255,0.01);text-align:center}
+    .small{font-size:13px;color:var(--muted)}
+    .searchRow a.btn-link {
+  background: linear-gradient(90deg, var(--accent), #06b6d4);
+  color: #02111a;
+  padding: 10px 14px;
+  border-radius: 10px;
+  text-decoration: none;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+}
+.searchRow a.btn-link:hover {
+  opacity: 0.9;
+}
+
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Xem dữ liệu trạm</h1>
+    <p>Nhập mã trạm để lấy dữ liệu thời tiết từ Firebase Realtime Database.</p>
+
+    <div class="searchRow">
+      <input id="qId" type="text" placeholder="Nhập mã trạm, ví dụ: 01" />
+      <button id="btnGet">Lấy dữ liệu</button>
+        <a href="list-station.html" class="btn-link">Danh sách trạm</a>
+    </div>
+
+    <div id="result" class="panel">
+      <div class="card">
+        <div class="kv">Mã trạm</div>
+        <div id="rID" class="val">—</div>
+        <div class="kv small">Tên trạm</div>
+        <div id="rName" class="small" style="margin-top:4px">—</div>
+      </div>
+
+      <div class="card">
+        <div class="kv">Thời gian</div>
+        <div id="rTime" class="val">—</div>
+        <div class="kv small">Nội dung thời gian (ISO)</div>
+        <div id="rTimeISO" class="small" style="margin-top:6px">—</div>
+      </div>
+
+      <div class="card">
+        <div class="kv">Nhiệt độ (°C)</div>
+        <div id="rTemp" class="val">—</div>
+        <div class="kv small">Độ ẩm (%)</div>
+        <div id="rHum" class="small" style="margin-top:6px">—</div>
+        <div class="kv small" style="margin-top:10px">Gió (m/s)</div>
+        <div id="rWind" class="small" style="margin-top:6px">—</div>
+        <div class="kv small" style="margin-top:10px">Áp suất (hPa)</div>
+        <div id="rPress" class="small" style="margin-top:6px">—</div>
+      </div>
+    </div>
+
+    <div style="margin-top:14px" id="info" class="empty">Chưa có dữ liệu. Nhập ID rồi bấm "Lấy dữ liệu".</div>
+  </div>
+
+  <!-- Firebase SDK -->
+  <script type="module">
+    // ====== PUT YOUR FIREBASE CONFIG HERE ======
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_PROJECT.firebaseapp.com",
+      databaseURL: "https://bai-2-a52bf-default-rtdb.firebaseio.com/",
+      projectId: "YOUR_PROJECT",
+      storageBucket: "YOUR_PROJECT.appspot.com",
+      messagingSenderId: "SENDER_ID",
+      appId: "APP_ID"
+    };
+    // ===========================================
+
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+    import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    const btn = document.getElementById('btnGet');
+    const qId = document.getElementById('qId');
+    const info = document.getElementById('info');
+
+    // result elements
+    const rID = document.getElementById('rID');
+    const rName = document.getElementById('rName');
+    const rTime = document.getElementById('rTime');
+    const rTimeISO = document.getElementById('rTimeISO');
+    const rTemp = document.getElementById('rTemp');
+    const rHum = document.getElementById('rHum');
+    const rWind = document.getElementById('rWind');
+    const rPress = document.getElementById('rPress');
+
+    btn.addEventListener('click', async () => {
+      const id = qId.value.trim();
+      if (!id) return alert("Nhập mã trạm.");
+
+      info.textContent = "Đang lấy dữ liệu...";
+      try {
+        const snapshot = await get(ref(db, `stations/${id}`));
+        if (!snapshot.exists()) {
+          info.textContent = "Không tìm thấy dữ liệu trạm này.";
+          clearDisplay();
+          return;
+        }
+        const data = snapshot.val();
+        displayData(data);
+        info.textContent = "Đã tải dữ liệu.";
+      } catch (err) {
+        console.error(err);
+        info.textContent = "Lỗi khi lấy dữ liệu. Kiểm tra databaseURL và rules.";
+      }
+    });
+
+    function clearDisplay(){
+      rID.textContent = '—'; rName.textContent = '—'; rTime.textContent = '—'; rTimeISO.textContent = '—';
+      rTemp.textContent = '—'; rHum.textContent = '—'; rWind.textContent = '—'; rPress.textContent = '—';
+    }
+    function displayData(d){
+      rID.textContent = d.ID || '—';
+      rName.textContent = d.Name || '—';
+      // Try to format time if ISO
+      rTimeISO.textContent = d.Time || '—';
+      try {
+        const dt = new Date(d.Time);
+        rTime.textContent = isNaN(dt) ? d.Time : dt.toLocaleString();
+      } catch { rTime.textContent = d.Time || '—' }
+      rTemp.textContent = (d.Temperature !== undefined) ? `${d.Temperature} °C` : '—';
+      rHum.textContent = (d.Humidity !== undefined) ? `${d.Humidity} %` : '—';
+      rWind.textContent = (d.Wind !== undefined) ? `${d.Wind} m/s` : '—';
+      rPress.textContent = (d.Pressure !== undefined) ? `${d.Pressure} hPa` : '—';
+    }
+  </script>
+</body>
+</html>

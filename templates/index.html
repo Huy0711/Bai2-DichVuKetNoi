@@ -1,0 +1,286 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Weather IoT — Submit Station</title>
+  <style>
+    :root{
+      --bg:#0f1724; --card:#0b1220; --accent:#06b6d4; --muted:#9aa7b2; --glass: rgba(255,255,255,0.03);
+      --success: #10b981; --warning:#fbbf24;
+    }
+    *{box-sizing:border-box;font-family:Inter,ui-sans-serif,system-ui,Segoe UI,Roboto,"Helvetica Neue",Arial}
+    body{
+      margin:0;
+      min-height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      background: linear-gradient(180deg,#071327 0%, #071c2a 60%);
+      color: #e6f0f2;
+      padding:32px;
+    }
+    .container{
+      width:100%;
+      max-width:920px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      border-radius:14px;
+      padding:28px;
+      box-shadow: 0 10px 30px rgba(2,6,23,0.6);
+      border:1px solid rgba(255,255,255,0.03);
+      display:grid;
+      grid-template-columns: 1fr 380px;
+      gap:20px;
+    }
+    .left{padding:8px 6px;}
+    h1{margin:0 0 8px;font-size:20px}
+    p.lead{margin:0 0 18px;color:var(--muted)}
+    form{display:flex;flex-direction:column;gap:12px}
+    .row{display:flex;gap:12px}
+    label{font-size:13px;color:var(--muted);margin-bottom:6px;display:block}
+    input[type="text"], input[type="number"], input[type="datetime-local"]{
+      background:var(--glass);
+      border:1px solid rgba(255,255,255,0.03);
+      padding:10px 12px;
+      border-radius:8px;
+      color:inherit;
+      outline:none;
+      width:100%;
+    }
+    .card{
+      background: linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.02));
+      border-radius:12px;
+      padding:14px;
+      border:1px solid rgba(255,255,255,0.02);
+    }
+
+    /* Buttons */
+    .btn {
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      padding:10px 14px;
+      border-radius:10px;
+      font-weight:600;
+      cursor:pointer;
+      transition:all 0.2s ease;
+      text-decoration:none;
+    }
+    .btn-primary {
+      background: linear-gradient(90deg, var(--accent), #0ea5a3);
+      color:#022026;
+      border:none;
+      box-shadow: 0 6px 18px rgba(6,182,212,0.12);
+    }
+    .btn-primary:hover {opacity:0.9;}
+    .btn-secondary {
+      background:transparent;
+      border:1px solid rgba(255,255,255,0.06);
+      color:var(--muted);
+    }
+    .btn-secondary:hover {background:rgba(255,255,255,0.04);}
+    .btn-warning {
+      background:linear-gradient(90deg, var(--warning), #f59e0b);
+      color:#1f1300;
+      box-shadow:0 6px 18px rgba(251,191,36,0.12);
+    }
+    .btn-warning:hover {opacity:0.9;}
+    .action-group {display:flex;gap:10px;margin-top:10px;flex-wrap:wrap;}
+
+    .right{
+      padding:8px;
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+    }
+    .preview{
+      min-height:160px;
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+      justify-content:center;
+      align-items:flex-start;
+    }
+    .kv{font-size:13px;color:var(--muted)}
+    .value{font-size:18px;font-weight:700}
+    .status {padding:8px;border-radius:8px;background:rgba(255,255,255,0.02);font-size:13px}
+    footer{grid-column:1/-1;color:var(--muted);font-size:13px;padding-top:6px}
+    @media (max-width:900px){
+      .container{grid-template-columns:1fr; padding:20px}
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="left">
+      <h1>Gửi dữ liệu trạm thời tiết</h1>
+      <p class="lead">Nhập ID trạm và các chỉ số — sẽ lưu vào Firebase Realtime Database.</p>
+
+      <div class="card">
+        <form id="stationForm">
+          <div class="row">
+            <div style="flex:1">
+              <label for="stationId">Mã trạm (ID)</label>
+              <input id="stationId" type="text" placeholder="ví dụ: 01" required />
+            </div>
+            <div style="width:180px">
+              <label for="timeInput">Thời gian</label>
+              <input id="timeInput" type="datetime-local" />
+            </div>
+          </div>
+
+          <div class="row">
+            <div style="flex:1">
+              <label for="temperature">Nhiệt độ (°C)</label>
+              <input id="temperature" type="number" step="0.1" placeholder="30.0" required />
+            </div>
+            <div style="flex:1">
+              <label for="humidity">Độ ẩm (%)</label>
+              <input id="humidity" type="number" step="0.1" placeholder="65" required />
+            </div>
+          </div>
+
+          <div class="row">
+            <div style="flex:1">
+              <label for="wind">Gió (m/s)</label>
+              <input id="wind" type="number" step="0.1" placeholder="1.2" required />
+            </div>
+            <div style="flex:1">
+              <label for="pressure">Áp suất (hPa)</label>
+              <input id="pressure" type="number" step="0.1" placeholder="1012" required />
+            </div>
+          </div>
+
+          <div class="action-group">
+            <button type="submit" class="btn btn-primary">Gửi lên Cloud</button>
+            <button id="fillDemo" type="button" class="btn btn-secondary">Điền mẫu demo</button>
+            <a href="station-view.html" class="btn btn-warning">Xem dữ liệu</a>
+          </div>
+        </form>
+
+        <footer>Firebase Realtime DB — sử dụng cho project thử nghiệm. Nhớ đổi rules trước khi production.</footer>
+      </div>
+    </div>
+
+    <div class="right">
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div class="kv">Trạng thái kết nối</div>
+            <div id="connStatus" class="value">Chưa kết nối</div>
+          </div>
+          <div id="lastMsg" class="status">Chưa có thao tác</div>
+        </div>
+
+        <div style="margin-top:12px" class="preview">
+          <div class="kv">Preview dữ liệu:</div>
+          <div id="previewBox">
+            <div class="kv">ID: <span id="pID" class="value">—</span></div>
+            <div class="kv">Thời gian: <span id="pTime" class="value">—</span></div>
+            <div class="kv">Nhiệt độ: <span id="pTemp" class="value">—</span></div>
+            <div class="kv">Độ ẩm: <span id="pHum" class="value">—</span></div>
+            <div class="kv">Gió: <span id="pWind" class="value">—</span></div>
+            <div class="kv">Áp suất: <span id="pPress" class="value">—</span></div>
+          </div>
+        </div>
+      </div>
+
+    
+
+  <!-- Firebase SDK (modular) -->
+  <script type="module">
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_PROJECT.firebaseapp.com",
+      databaseURL: "https://bai-2-a52bf-default-rtdb.firebaseio.com/",
+      projectId: "YOUR_PROJECT",
+      storageBucket: "YOUR_PROJECT.appspot.com",
+      messagingSenderId: "SENDER_ID",
+      appId: "APP_ID"
+    };
+
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+    import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    const form = document.getElementById('stationForm');
+    const connStatus = document.getElementById('connStatus');
+    const lastMsg = document.getElementById('lastMsg');
+    const pID = document.getElementById('pID');
+    const pTime = document.getElementById('pTime');
+    const pTemp = document.getElementById('pTemp');
+    const pHum = document.getElementById('pHum');
+    const pWind = document.getElementById('pWind');
+    const pPress = document.getElementById('pPress');
+
+    try {
+      connStatus.textContent = "Connected (Firebase SDK loaded)";
+    } catch (e) {
+      connStatus.textContent = "Connection failed";
+    }
+
+    document.getElementById('fillDemo').addEventListener('click', () => {
+      document.getElementById('stationId').value = "01";
+      document.getElementById('temperature').value = "30";
+      document.getElementById('humidity').value = "60";
+      document.getElementById('wind').value = "1.5";
+      document.getElementById('pressure').value = "1012";
+      const dt = new Date();
+      document.getElementById('timeInput').value = dt.toISOString().slice(0,16);
+      updatePreview();
+    });
+
+    function updatePreview(){
+      const id = document.getElementById('stationId').value || '—';
+      const time = document.getElementById('timeInput').value || new Date().toLocaleString();
+      pID.textContent = id;
+      pTime.textContent = time;
+      pTemp.textContent = document.getElementById('temperature').value || '—';
+      pHum.textContent = document.getElementById('humidity').value || '—';
+      pWind.textContent = document.getElementById('wind').value || '—';
+      pPress.textContent = document.getElementById('pressure').value || '—';
+    }
+
+    ['stationId','temperature','humidity','wind','pressure','timeInput'].forEach(id => {
+      document.getElementById(id).addEventListener('input', updatePreview);
+    });
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const id = document.getElementById('stationId').value.trim();
+      if (!id) return alert("Nhập mã trạm (ID).");
+
+      const temperature = parseFloat(document.getElementById('temperature').value) || 0;
+      const humidity = parseFloat(document.getElementById('humidity').value) || 0;
+      const wind = parseFloat(document.getElementById('wind').value) || 0;
+      const pressure = parseFloat(document.getElementById('pressure').value) || 0;
+      const timeVal = document.getElementById('timeInput').value;
+      const time = timeVal ? new Date(timeVal).toISOString() : new Date().toISOString();
+
+      const data = {
+        ID: id,
+        Name: `Weather Station ${id}`,
+        Time: time,
+        Temperature: temperature,
+        Humidity: humidity,
+        Wind: wind,
+        Pressure: pressure
+      };
+
+      try {
+        await set(ref(db, `stations/${id}`), data);
+        lastMsg.textContent = `Đã gửi: ${new Date().toLocaleTimeString()}`;
+        lastMsg.style.background = "linear-gradient(90deg,var(--success), rgba(16,185,129,0.1))";
+        alert("✅ Dữ liệu đã gửi lên Firebase.");
+      } catch (err) {
+        console.error(err);
+        alert("❌ Lỗi khi gửi dữ liệu. Kiểm tra databaseURL và rules.");
+        lastMsg.textContent = "Lỗi gửi";
+      }
+      updatePreview();
+    });
+  </script>
+</body>
+</html>
